@@ -35,15 +35,17 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "5678:5678"
+      - "0.0.0.0:5678:5678"
     environment:
       TZ: America/Chicago
       GENERIC_TIMEZONE: America/Chicago
-      N8N_HOST: localhost
+      N8N_HOST: clockworkideas.ngrok.io
       N8N_PORT: 5678
-      N8N_PROTOCOL: http
-      N8N_EDITOR_BASE_URL: http://localhost:5678/
-      WEBHOOK_URL: http://localhost:5678/
+      N8N_PROTOCOL: https
+      N8N_SECURE_COOKIE: "false"
+      N8N_EDITOR_BASE_URL: https://clockworkideas.ngrok.io/
+      WEBHOOK_URL: https://clockworkideas.ngrok.io/
+      N8N_PROXY_HOPS: 1
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
       N8N_RUNNERS_ENABLED: "true"
       EXECUTIONS_DATA_PRUNE: "true"
@@ -59,3 +61,21 @@ services:
       - ./local-files:/files
     mem_limit: 2g
     cpus: 2.0
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: n8n-ngrok
+    restart: unless-stopped
+    depends_on:
+      - n8n
+    command:
+      - http
+      - --log=stdout
+      - --url=clockworkideas.ngrok.io
+      - http://n8n:5678
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:?Set NGROK_AUTHTOKEN in .env or your shell}
+    ports:
+      - "127.0.0.1:4041:4040"
+    mem_limit: 256m
+    cpus: 0.25
